@@ -7,6 +7,7 @@ import DifficultyBreakdown from './components/DifficultyBreakdown';
 import ContestSourceAccuracy from './components/ContestSourceAccuracy';
 import ActivityStreak from './components/ActivityStreak';
 import RecentSolvedTable from './components/RecentSolvedTable';
+import LiveTrackerBadge from './components/LiveTrackerBadge';
 import {
   getDefaultHandle,
   getSavedDefaultHandle,
@@ -123,6 +124,8 @@ export default function App() {
 
           {/* Quick Actions & Default Shortcut */}
           <div className="flex items-center gap-2">
+            <LiveTrackerBadge variant="navbar" />
+
             <button
               type="button"
               onClick={() => {
@@ -225,6 +228,9 @@ export default function App() {
 
       {/* Footer */}
       <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
+        <div className="mb-4">
+          <LiveTrackerBadge variant="footer" />
+        </div>
         <p>
           Data provided by <a href="https://atcoder.jp" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-cyan-400">AtCoder Official</a> &{' '}
           <a href="https://kenkoooo.com/atcoder" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-cyan-400">Kenkoooo AtCoder Problems API</a>.
