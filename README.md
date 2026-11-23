@@ -68,9 +68,26 @@ Open your browser and navigate to:
 http://localhost:3000
 ```
 
-### 3. Usage
-- The dashboard automatically loads `tourist` by default on startup.
-- Type any AtCoder handle into the search bar (e.g. `chokudai`, `tourist`, `kenkoooo`, or your own AtCoder ID) and hit **Search**.
+### 3. Usage & Setting Your Default ID
+
+You can customize the default AtCoder ID in three easy ways:
+
+1. **Directly in the UI (Recommended)**:
+   - Search for your AtCoder ID in the search bar.
+   - Click the **"⭐ Set as Default"** button on the profile banner.
+   - Your handle will be saved in your browser's local storage and will automatically load whenever you open the dashboard!
+
+2. **In Code (`src/config.js`)**:
+   - Open [`src/config.js`](file:///Users/sachinmaurya/Desktop/Projects/Atcoder%20work/src/config.js) and update `DEFAULT_HANDLE` with your ID:
+     ```javascript
+     export const DEFAULT_HANDLE = 'your_atcoder_id';
+     ```
+
+3. **Via URL Query Parameter**:
+   - Access directly with `?user=your_id` or `?handle=your_id`, e.g.:
+     ```
+     http://localhost:3000/?user=your_atcoder_id
+     ```
 
 ---
 

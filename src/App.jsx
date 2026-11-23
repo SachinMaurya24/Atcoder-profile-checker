@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Loader2, AlertCircle, Compass, RefreshCw } from 'lucide-react';
+import { Search, Loader2, AlertCircle, Compass, RefreshCw, Star } from 'lucide-react';
 import ProfileBanner from './components/ProfileBanner';
 import RatingChart from './components/RatingChart';
 import ContestCard from './components/ContestCard';
@@ -7,28 +7,44 @@ import DifficultyBreakdown from './components/DifficultyBreakdown';
 import ContestSourceAccuracy from './components/ContestSourceAccuracy';
 import ActivityStreak from './components/ActivityStreak';
 import RecentSolvedTable from './components/RecentSolvedTable';
+import {
+  getDefaultHandle,
+  getSavedDefaultHandle,
+  saveDefaultHandle,
+  resetDefaultHandle,
+  DEFAULT_HANDLE
+} from './config';
 
 export default function App() {
+  const [defaultHandle, setDefaultHandleState] = useState(() => getSavedDefaultHandle());
   const [usernameInput, setUsernameInput] = useState('');
-  const [currentUser, setCurrentUser] = useState('tourist');
+  const [currentUser, setCurrentUser] = useState(() => getDefaultHandle());
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const fetchUserData = async (handle) => {
-    if (!handle.trim()) return;
+    if (!handle || !handle.trim()) return;
+    const cleanHandle = handle.trim();
     setLoading(true);
     setError(null);
 
     try {
-      const res = await fetch(`/api/user/${encodeURIComponent(handle.trim())}/full-data`);
+      const res = await fetch(`/api/user/${encodeURIComponent(cleanHandle)}/full-data`);
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || `Failed to fetch data for user "${handle}"`);
+        throw new Error(errJson.error || `Failed to fetch data for user "${cleanHandle}"`);
       }
       const data = await res.json();
       setUserData(data);
-      setCurrentUser(handle.trim());
+      setCurrentUser(cleanHandle);
+
+      // Keep URL search param in sync for easy sharing/bookmarking
+      if (typeof window !== 'undefined' && window.history?.replaceState) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('user', cleanHandle);
+        window.history.replaceState(null, '', url.toString());
+      }
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -39,15 +55,30 @@ export default function App() {
   };
 
   useEffect(() => {
-    fetchUserData('tourist');
+    const initialHandle = getDefaultHandle();
+    fetchUserData(initialHandle);
   }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
     if (usernameInput.trim()) {
       fetchUserData(usernameInput.trim());
+      setUsernameInput('');
     }
   };
+
+  const handleToggleDefault = (handleToToggle = currentUser) => {
+    if (defaultHandle.toLowerCase() === handleToToggle.toLowerCase()) {
+      resetDefaultHandle();
+      setDefaultHandleState(DEFAULT_HANDLE);
+    } else {
+      saveDefaultHandle(handleToToggle);
+      setDefaultHandleState(handleToToggle);
+    }
+  };
+
+  const isCurrentUserDefault =
+    currentUser.toLowerCase() === defaultHandle.toLowerCase();
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-cyan-500 selection:text-slate-950">
@@ -74,7 +105,7 @@ export default function App() {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Enter AtCoder Handle (e.g. tourist, chokudai)..."
+                placeholder={`Search handle (default: ${defaultHandle})...`}
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
                 className="w-full bg-slate-900 border border-slate-700 hover:border-slate-600 focus:border-cyan-400 rounded-xl py-2 pl-10 pr-24 text-xs text-white placeholder-slate-400 focus:outline-none transition-all"
@@ -83,18 +114,43 @@ export default function App() {
               <button
                 type="submit"
                 disabled={loading}
-                className="absolute right-1.5 top-1.5 px-3 py-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold rounded-lg transition-all flex items-center gap-1"
+                className="absolute right-1.5 top-1.5 px-3 py-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
               >
                 {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Search'}
               </button>
             </div>
           </form>
 
-          {/* Quick Info */}
-          <div className="hidden md:flex items-center gap-2">
+          {/* Quick Actions & Default Shortcut */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (!isCurrentUserDefault) {
+                  fetchUserData(defaultHandle);
+                }
+              }}
+              className={`px-3 py-1.5 rounded-xl border text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
+                isCurrentUserDefault
+                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+              }`}
+              title={`Default ID: "${defaultHandle}". Click to load your default profile.`}
+            >
+              <Star
+                className={`w-3.5 h-3.5 ${
+                  isCurrentUserDefault
+                    ? 'fill-amber-400 text-amber-400'
+                    : 'text-slate-500'
+                }`}
+              />
+              <span className="hidden sm:inline text-slate-400">Default:</span>
+              <span className="font-semibold text-slate-200">{defaultHandle}</span>
+            </button>
+
             <button
               onClick={() => fetchUserData(currentUser)}
-              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-all"
+              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-all cursor-pointer"
               title="Refresh profile"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-cyan-400' : ''}`} />
@@ -124,10 +180,10 @@ export default function App() {
               <h3 className="font-bold text-base text-rose-200 mb-1">User Lookup Error</h3>
               <p className="text-xs text-rose-300/80">{error}</p>
               <button
-                onClick={() => fetchUserData('tourist')}
-                className="mt-3 px-3 py-1 bg-rose-900/60 hover:bg-rose-900 border border-rose-700 rounded-lg text-xs font-bold text-rose-100 transition-all"
+                onClick={() => fetchUserData(defaultHandle)}
+                className="mt-3 px-3 py-1 bg-rose-900/60 hover:bg-rose-900 border border-rose-700 rounded-lg text-xs font-bold text-rose-100 transition-all cursor-pointer"
               >
-                Load Default Profile (tourist)
+                Load Default Profile ({defaultHandle})
               </button>
             </div>
           </div>
@@ -136,7 +192,11 @@ export default function App() {
         {userData && !loading && (
           <>
             {/* 1. Profile Banner (Codeforces style) */}
-            <ProfileBanner user={userData.user} />
+            <ProfileBanner
+              user={userData.user}
+              isDefault={isCurrentUserDefault}
+              onToggleDefault={() => handleToggleDefault(currentUser)}
+            />
 
             {/* 2. Contest Participation Card (ABC, ARC, AGC, AHC counts, Best perf) */}
             <ContestCard contestStats={userData.contestStats} />

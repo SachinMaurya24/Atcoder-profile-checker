@@ -1,7 +1,7 @@
 import React from 'react';
 import { ExternalLink, Award, CheckCircle, TrendingUp, Hash, Star } from 'lucide-react';
 
-export default function ProfileBanner({ user }) {
+export default function ProfileBanner({ user, isDefault = false, onToggleDefault }) {
   const {
     id,
     currentRating,
@@ -41,6 +41,30 @@ export default function ProfileBanner({ user }) {
               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tier.color }}></span>
               {tier.name} Tier
             </span>
+
+            {onToggleDefault && (
+              <button
+                type="button"
+                onClick={onToggleDefault}
+                className={`px-2.5 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isDefault
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 hover:bg-amber-500/30'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 hover:border-slate-600'
+                }`}
+                title={
+                  isDefault
+                    ? 'This is your default profile on startup (click to reset)'
+                    : `Set ${id} as your default startup profile`
+                }
+              >
+                <Star
+                  className={`w-3.5 h-3.5 ${
+                    isDefault ? 'fill-amber-400 text-amber-400' : 'text-slate-400'
+                  }`}
+                />
+                <span>{isDefault ? 'Default Profile' : 'Set as Default'}</span>
+              </button>
+            )}
           </div>
 
           <h1
